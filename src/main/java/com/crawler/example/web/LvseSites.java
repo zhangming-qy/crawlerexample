@@ -1,5 +1,9 @@
 package com.crawler.example.web;
 
+import com.crawler.example.app.AppTasksStatus;
+import com.crawler.example.app.AppTaskMan;
+import com.crawler.example.app.ITaskRunner;
+import com.crawler.example.entity.AppTask;
 import com.crawler.example.entity.MsgSites;
 import com.crawler.example.map.MsgSitesMap;
 import org.jsoup.nodes.Document;
@@ -8,14 +12,12 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@RestController
-public class LvseSites implements Runnable{
+@Component
+public class LvseSites implements ITaskRunner {
 
     private final Logger log = LoggerFactory.getLogger(LvseSites.class);
 
@@ -25,13 +27,40 @@ public class LvseSites implements Runnable{
     @Autowired
     private MsgSitesMap msgSitesMap;
 
+   /*
     @Value("${web.url}")
     private String root_url;
+    */
+
+   @Autowired
+    private AppTaskMan appTaskMan;
+
+    public LvseSites(){}
+
+    public AppTask getAppTask() {
+        return appTaskMan.getAppTask();
+    }
+
+    public AppTaskMan getAppTaskMan() {
+        return appTaskMan;
+    }
+
+    public void setAppTaskMan(AppTaskMan appTaskMan) {
+        this.appTaskMan = appTaskMan;
+    }
 
     @Override
-    @Scheduled(fixedDelay=86400000)
+    //@Scheduled(fixedDelay=86400000)
     public void run() {
-        crawlLvseSites(this.root_url);
+        AppTask appTask = getAppTask();
+        String url = appTask.getCurr_url() == null ? appTask.getRoot_url() : appTask.getCurr_url();
+        appTaskMan.updateAppTasksStatus(AppTasksStatus.RUNNING);
+        crawlLvseSites(url);
+    }
+
+    @Override
+    public void setTask(AppTask appTask) {
+        this.appTaskMan.setTask(appTask);
     }
 
     public void crawlLvseSites(String url){
@@ -76,7 +105,9 @@ public class LvseSites implements Runnable{
         //next page
         Element nextLink = document.selectFirst("a[href]:contains(下一页)");
         if(nextLink!=null){
-            crawlLvseSites(nextLink.absUrl("href"));
+            String nextPage = nextLink.absUrl("href");
+            appTaskMan.updateAppTasksCurrUrl(nextPage);
+            crawlLvseSites(nextPage);
         }
         else{
             log.info("This is the last page: " + url);

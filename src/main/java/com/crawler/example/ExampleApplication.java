@@ -1,10 +1,12 @@
 package com.crawler.example;
 
+import com.crawler.example.app.TaskRunner;
+import org.mybatis.spring.annotation.MapperScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
@@ -16,8 +18,4 @@ public class ExampleApplication {
 		SpringApplication.run(ExampleApplication.class, args);
 	}
 
-	//@Bean
-	public TaskRunner taskRunner(){
-		return new TaskRunner();
-	}
 }
