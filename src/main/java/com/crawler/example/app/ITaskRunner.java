@@ -2,6 +2,8 @@ package com.crawler.example.app;
 
 import com.crawler.example.entity.AppTask;
 
-public interface ITaskRunner extends Runnable {
+import java.util.concurrent.Callable;
+
+public interface ITaskRunner extends Callable<String> {
     public void setTask(AppTask appTask);
 }

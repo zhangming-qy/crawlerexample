@@ -1,14 +1,15 @@
 package com.crawler.example.app;
 
-import com.crawler.example.app.AppTasksStatus;
 import com.crawler.example.entity.AppTask;
 import com.crawler.example.map.AppTaskMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
 
 @Component
+@Scope("prototype")
 public class AppTaskMan implements ITaskRunner {
 
     @Autowired
@@ -26,8 +27,8 @@ public class AppTaskMan implements ITaskRunner {
         this.appTaskMap = appTaskMap;
     }
 
-    public void updateAppTasksStatus(AppTasksStatus appTasksStatus){
-        appTask.setStatus(appTasksStatus.name());
+    public void updateAppTasksStatus(AppTaskStatus appTaskStatus){
+        appTask.setStatus(appTaskStatus.name());
         appTask.setModified_time(new Timestamp(System.currentTimeMillis()));
         updateAppTasks();
     }
@@ -42,13 +43,22 @@ public class AppTaskMan implements ITaskRunner {
         appTaskMap.update(appTask);
     }
 
+    public AppTaskStatus getAppStatus(){
+        return AppTaskStatus.valueOf(appTask.getStatus());
+    }
+
+    public String getAppStatusStr(){
+        return appTask.getStatus();
+    }
+
     @Override
     public void setTask(AppTask appTask) {
         this.appTask = appTask;
     }
 
     @Override
-    public void run() {
+    public String call() {
         //TODO
+        return "";
     }
 }

@@ -8,9 +8,10 @@ public class AppTask implements Cloneable {
     private int id;
     private String root_url;
     private String curr_url;
+    private String last_url;
     private String group_name;
     private int order_num;
-    private String jClass;
+    private String jclass;
     private String status;
     private Timestamp created_time;
     private Timestamp modified_time;
@@ -39,6 +40,14 @@ public class AppTask implements Cloneable {
         this.curr_url = curr_url;
     }
 
+    public String getLast_url() {
+        return last_url;
+    }
+
+    public void setLast_url(String last_url) {
+        this.last_url = last_url;
+    }
+
     public String getGroup_name() {
         return group_name;
     }
@@ -55,12 +64,12 @@ public class AppTask implements Cloneable {
         this.order_num = order_num;
     }
 
-    public String getJClass() {
-        return jClass;
+    public String getJclass() {
+        return jclass;
     }
 
-    public void setJClass(String jclass) {
-        this.jClass = jclass;
+    public void setJclass(String jclass) {
+        this.jclass = jclass;
     }
 
     public String getStatus() {
@@ -93,6 +102,7 @@ public class AppTask implements Cloneable {
                 "id=" + id +
                 ", root_url='" + root_url +
                 ", curr_url='" + curr_url +
+                ", last_url='" + last_url +
                 ", group_name='" + group_name +
                 ", order_num='" + order_num +
                 ", status='" + status +

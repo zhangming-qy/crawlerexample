@@ -1,6 +1,6 @@
 package com.crawler.example.web;
 
-import com.crawler.example.app.AppTasksStatus;
+import com.crawler.example.app.AppTaskStatus;
 import com.crawler.example.app.AppTaskMan;
 import com.crawler.example.app.ITaskRunner;
 import com.crawler.example.entity.AppTask;
@@ -12,11 +12,13 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@Scope("prototype")
 public class LvseSites implements ITaskRunner {
 
     private final Logger log = LoggerFactory.getLogger(LvseSites.class);
@@ -51,11 +53,17 @@ public class LvseSites implements ITaskRunner {
 
     @Override
     //@Scheduled(fixedDelay=86400000)
-    public void run() {
+    public String call() {
         AppTask appTask = getAppTask();
         String url = appTask.getCurr_url() == null ? appTask.getRoot_url() : appTask.getCurr_url();
-        appTaskMan.updateAppTasksStatus(AppTasksStatus.RUNNING);
+        appTaskMan.updateAppTasksStatus(AppTaskStatus.RUNNING);
         crawlLvseSites(url);
+
+        if(appTask.getCurr_url().equals(appTask.getLast_url())){
+            appTaskMan.updateAppTasksStatus(AppTaskStatus.DONE);
+        }
+
+        return appTaskMan.getAppStatusStr();
     }
 
     @Override
