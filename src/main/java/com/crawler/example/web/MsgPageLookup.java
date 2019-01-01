@@ -4,7 +4,9 @@ import com.crawler.example.app.AppTaskMan;
 import com.crawler.example.app.AppTaskStatus;
 import com.crawler.example.app.ITaskRunner;
 import com.crawler.example.entity.AppTask;
+import com.crawler.example.entity.ComInfo;
 import com.crawler.example.entity.MsgSites;
+import com.crawler.example.map.ComInfoMap;
 import com.crawler.example.map.MsgSitesMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -30,6 +32,9 @@ public class MsgPageLookup implements ITaskRunner {
     private MsgSitesMap msgSitesMap;
 
     @Autowired
+    private ComInfoMap comInfoMap;
+
+    @Autowired
     private AppTaskMan appTaskMan;
 
     public AppTask getAppTask() {
@@ -45,45 +50,16 @@ public class MsgPageLookup implements ITaskRunner {
     public String call() throws Exception {
 
         AppTask appTask = getAppTask();
-        String url = appTask.getCurr_url() == null ? appTask.getRoot_url() : appTask.getCurr_url();
-        appTaskMan.updateAppTasksStatus(AppTaskStatus.RUNNING);
-        crawlLvseSites(url);
+        List<ComInfo> comInfoList = comInfoMap.getMsgUnRequestedListInCategory(appTask.getGroup_name());
 
-        if(appTask.getCurr_url().equals(appTask.getLast_url())){
-            appTaskMan.updateAppTasksStatus(AppTaskStatus.DONE);
-        }
+        //Status PENDING to RUNNING
+        if(appTask.getStatus().equals(AppTaskStatus.PENDING.name()))
+            appTaskMan.updateAppTasksStatus(AppTaskStatus.RUNNING);
 
-        return appTaskMan.getAppStatusStr();
-    }
-
-    public void crawlLvseSites(String url){
-        log.info("Requesting URL: " + url);
-        Document document = util.getContent(url);
-
-        if(document == null){
-            log.warn("Can't get content from " + url);
-            return;
-        }
-
-        log.info(url);
-        System.out.println("Host:" + Util.getHost(url));
-        System.out.println("Location:" + url);
-
-        Elements h2List = document.select("div.info h2:has(a)");
-
-        for (Element h2: h2List) {
-            Element brand = h2.selectFirst("a:not(.visit)");
-            Element link = h2.selectFirst("a.visit[href]");
-            String aHref = link.absUrl("href");
-
-            log.info("Brand: " + brand.text());
-            log.info("Brand Link: " + aHref);
-
-            MsgSites msgSites = getMsgSites(aHref,true);
-
+        for(ComInfo comInfo : comInfoList){
+            MsgSites msgSites = getMsgSites(comInfo.getWeb_url(),true);
             if(msgSites != null){
-                msgSites.setSite_name(brand.text());
-                log.info("Get website " + msgSites.getSite_name() + " " + msgSites.getReg_url());
+                msgSites.setSite_name(comInfo.getName());
                 MsgSites msgSitesCheck = msgSitesMap.selectByDomain(msgSites.getDomain_name());
                 if(msgSitesCheck == null){
                     msgSitesMap.insert(msgSites);
@@ -92,19 +68,9 @@ public class MsgPageLookup implements ITaskRunner {
                     log.info("Duplicated website" + msgSites.getSite_name() + " " + msgSites.getReg_url());
                 }
             }
-
         }
 
-        //next page
-        Element nextLink = document.selectFirst("a[href]:contains(下一页)");
-        if(nextLink!=null){
-            String nextPage = nextLink.absUrl("href");
-            appTaskMan.updateAppTasksCurrUrl(nextPage);
-            crawlLvseSites(nextPage);
-        }
-        else{
-            log.info("This is the last page: " + url);
-        }
+        return appTaskMan.getAppStatusStr();
     }
 
     public MsgSites getMsgSites(String url, boolean isLoop){

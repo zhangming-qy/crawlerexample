@@ -5,9 +5,7 @@ import com.crawler.example.app.AppTaskMan;
 import com.crawler.example.app.ITaskRunner;
 import com.crawler.example.entity.AppTask;
 import com.crawler.example.entity.ComInfo;
-import com.crawler.example.entity.MsgSites;
 import com.crawler.example.map.ComInfoMap;
-import com.crawler.example.map.MsgSitesMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -16,8 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @Scope("prototype")
@@ -112,7 +108,7 @@ public class LvseSites implements ITaskRunner {
             log.info("Brand: " + brand.text());
             log.info("Brand Link: " + aHref);
 
-            ComInfo comInfoCheck = comInfoMap.selectByUrl(aHref);
+            ComInfo comInfoCheck = comInfoMap.getByUrl(aHref);
             if(comInfoCheck == null)
                 comInfoMap.insert(comInfo);
 
