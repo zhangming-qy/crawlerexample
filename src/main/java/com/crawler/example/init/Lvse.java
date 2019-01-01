@@ -85,21 +85,25 @@ public class Lvse {
         List<AppTask> appTasks = appTaskMap.getAll();
 
         StringBuilder stringBuilder = new StringBuilder();
-
+        stringBuilder.append("<table border='1px' cellspacing='0' cellpadding='0' cellspacing='4'  border-collapse='collapse'>");
+        stringBuilder.append("<th>first page</th><th>last page</th>");
         for(AppTask appTask : appTasks){
             String root_url = appTask.getRoot_url();
-            Document docLink = util.getContent(root_url);
-            Element elemLast = docLink.selectFirst(web_last);
-
+            stringBuilder.append("<tr><td>");
             stringBuilder.append(root_url);
-            stringBuilder.append("&nbsp;&nbsp; Last:");
-            stringBuilder.append(elemLast.absUrl("href"));
-            stringBuilder.append("<br>");
+            stringBuilder.append("</td><td>");
 
-            appTask.setLast_url(elemLast.absUrl("href"));
-            appTaskMap.update(appTask);
+            if(appTask.getLast_url() == null || appTask.getLast_url().isEmpty()) {
+                Document docLink = util.getContent(root_url);
+                Element elemLast = docLink.selectFirst(web_last);
+                appTask.setLast_url(elemLast.absUrl("href"));
+                appTaskMap.update(appTask);
+            }
+
+            stringBuilder.append(appTask.getLast_url());
+            stringBuilder.append("</td></tr>");
         }
-
+        stringBuilder.append("</table>");
         return stringBuilder.toString();
     }
 }

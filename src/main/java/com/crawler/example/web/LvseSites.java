@@ -4,7 +4,9 @@ import com.crawler.example.app.AppTaskStatus;
 import com.crawler.example.app.AppTaskMan;
 import com.crawler.example.app.ITaskRunner;
 import com.crawler.example.entity.AppTask;
+import com.crawler.example.entity.ComInfo;
 import com.crawler.example.entity.MsgSites;
+import com.crawler.example.map.ComInfoMap;
 import com.crawler.example.map.MsgSitesMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -27,7 +29,7 @@ public class LvseSites implements ITaskRunner {
     private Util util;
 
     @Autowired
-    private MsgSitesMap msgSitesMap;
+    private ComInfoMap comInfoMap;
 
    /*
     @Value("${web.url}")
@@ -84,29 +86,35 @@ public class LvseSites implements ITaskRunner {
         System.out.println("Host:" + Util.getHost(url));
         System.out.println("Location:" + url);
 
-        Elements h2List = document.select("div.info h2:has(a)");
+        ComInfo comInfo = new ComInfo();
+        comInfo.setFrom_url(url);
+        Element elemRegion = document.selectFirst("div.area#area1 a.on");
+        if(elemRegion != null)
+            comInfo.setRegion(elemRegion.text());
 
-        for (Element h2: h2List) {
-            Element brand = h2.selectFirst("a:not(.visit)");
-            Element link = h2.selectFirst("a.visit[href]");
+        Element elemCategory = document.selectFirst("div.area#area2 a.on");
+        if(elemCategory != null)
+            comInfo.setCategory(elemCategory.text());
+
+        Elements slistingList = document.select("div#slisting"); //div.info h2:has(a)
+
+        for (Element slisting: slistingList) {
+            Element brand = slisting.selectFirst("div.info a:not(.visit)");
+            Element link = slisting.selectFirst("div.info a.visit[href]");
+            Element desc = slisting.selectFirst("div.info p:not(.l)");
             String aHref = link.absUrl("href");
+
+            comInfo.setName(brand.text());
+            comInfo.setDescription(desc.ownText());
+            comInfo.setWeb_url(aHref);
+            comInfo.setVisit_cnt(0);
 
             log.info("Brand: " + brand.text());
             log.info("Brand Link: " + aHref);
 
-            MsgSites msgSites = getMsgSites(aHref,true);
-
-            if(msgSites != null){
-                msgSites.setSite_name(brand.text());
-                log.info("Get website " + msgSites.getSite_name() + " " + msgSites.getReg_url());
-                MsgSites msgSitesCheck = msgSitesMap.selectByDomain(msgSites.getDomain_name());
-                if(msgSitesCheck == null){
-                    msgSitesMap.insert(msgSites);
-                }
-                else {
-                    log.info("Duplicated website" + msgSites.getSite_name() + " " + msgSites.getReg_url());
-                }
-            }
+            ComInfo comInfoCheck = comInfoMap.selectByUrl(aHref);
+            if(comInfoCheck == null)
+                comInfoMap.insert(comInfo);
 
         }
 
@@ -120,51 +128,5 @@ public class LvseSites implements ITaskRunner {
         else{
             log.info("This is the last page: " + url);
         }
-    }
-
-    public MsgSites getMsgSites(String url, boolean isLoop){
-
-        MsgSites msgSites = new MsgSites();
-        Document doc = util.getContent(url);
-
-        if(doc ==null) {
-            log.warn("Can't get content from " + url);
-            return null;
-        }
-
-        List<String> cssMsgs = CssQuery.getMsgElems(); /*new String[]{"input[type=button]:contains(验证码)",
-                "input[type=button]input[value*=验证码]",
-                "a:contains(验证码)",
-                "button:contains(验证码)"
-        };*/
-
-        List<String> cssRegs = CssQuery.getRegElems(); //new String[] {"a[href]:contains(注册)"};
-
-        String host = Util.getHost(url);
-        msgSites.setDomain_name(host);
-
-        for (String cssQuery : cssMsgs){
-            Element elem = doc.selectFirst(cssQuery);
-            //this is a send message page
-            if(elem != null){
-                msgSites.setReg_url(url);
-                return msgSites;
-            }
-        }
-
-
-        for(String cssQuery : cssRegs){
-            //check register link
-            Element elem = doc.selectFirst(cssQuery);
-
-            //contains register link
-            if(elem != null && isLoop){
-                String link =  elem.absUrl("href");
-                //System.out.println("Reg Page:" + link);
-                return getMsgSites(link,false);
-            }
-        }
-
-        return null;
     }
 }

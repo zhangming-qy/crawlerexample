@@ -30,7 +30,7 @@ public class TaskRunner {
     private static ThreadPoolExecutor executor  = new ThreadPoolExecutor(corePoolSize, corePoolSize+1, 10l, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>(1000));
 
-    @Scheduled(fixedDelay=30000)
+    @Scheduled(fixedDelay=600000)
     public void start() {
         log.info("Application is running...................");
 
@@ -84,6 +84,10 @@ public class TaskRunner {
     public void refreshAppTasks(){
         //Get pending tasks
         appTasks = appTaskMap.getAppTasksByStatus(AppTaskStatus.PENDING.name());
+
+        if(appTasks.size() == 0 && executor.getActiveCount()==0){
+            appTasks = appTaskMap.getAppTasksByStatus(AppTaskStatus.RUNNING.name());
+        }
     }
 
     public void updateAppTask(AppTask appTasks){

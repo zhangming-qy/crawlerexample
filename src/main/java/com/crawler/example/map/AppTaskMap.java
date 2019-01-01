@@ -21,7 +21,7 @@ public interface AppTaskMap {
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     void insert(AppTask appTask);
 
-    @Update("UPDATE app_tasks SET status=#{status},curr_url =#{curr_url},last_url=#{last_url}, modified_time=now() WHERE id =#{id}")
+    @Update("update app_tasks set status=#{status}, curr_url=#{curr_url}, last_url=#{last_url}, modified_time=now() where id=#{id}")
     void update(AppTask appTask);
 
 }

@@ -13,15 +13,15 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class LvseSitesTest {
+public class MsgPageLookupTest {
 
     @Autowired
-    private LvseSites lvseSites;
+    private MsgPageLookup msgPageLookup;
 
     @Test
     public void getMsgSites() {
         String url = "https://passport.111.com.cn/sso/register.action";
-        MsgSites msgSites = lvseSites.getMsgSites(url, true);
+        MsgSites msgSites = msgPageLookup.getMsgSites(url, true);
         Assert.assertEquals("https://passport.111.com.cn/sso/login.action", msgSites.getReg_url());
     }
 }
