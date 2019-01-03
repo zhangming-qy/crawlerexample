@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -27,16 +28,16 @@ public class TaskRunner {
 */
     private final static int corePoolSize = Runtime.getRuntime().availableProcessors();
 
-    private static ThreadPoolExecutor executor  = new ThreadPoolExecutor(corePoolSize, corePoolSize+1, 10l, TimeUnit.SECONDS,
+    private static ThreadPoolExecutor executor  = new ThreadPoolExecutor(corePoolSize, corePoolSize*2, 10l, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>(1000));
 
-    @Scheduled(fixedDelay=600000)
+    @Scheduled(fixedDelay=120000) //delay 2mins
     public void start() {
         log.info("Application is running...................");
 
         refreshAppTasks();
 
-        List<Future<String>> resultList = new ArrayList<Future<String>>();
+        List<Future<AppTask>> resultList = new ArrayList<>();
 
         for(AppTask appTask : appTasks){
 
@@ -48,11 +49,6 @@ public class TaskRunner {
 
                 task.setTask(appTask);
                 resultList.add(executor.submit(task));
-                /*
-                task.call();
-                appTask.setStatus(AppTaskStatus.CLOSED.name());
-                updateAppTask(appTask);
-                */
             }
             catch (ClassNotFoundException ex){
                 log.error("Can't found class " + appTask.getJclass());
@@ -64,13 +60,20 @@ public class TaskRunner {
         }
 
         //遍历任务的结果
-        for (Future<String> fs : resultList) {
+        for (Future<AppTask> fs : resultList) {
             try {
-                log.info(fs.get());//打印各个线任务执行的结果，调用future.get() 阻塞主线程，获取异步任务的返回结果
+                //打印各个线任务执行的结果，调用future.get() 阻塞主线程，获取异步任务的返回结果
+                AppTask appTask = fs.get(10, TimeUnit.MINUTES);
+                log.info("Task [root url=" +  appTask.getRoot_url() +
+                        "; group name=" + appTask.getGroup_name() +
+                        "; java class=" + appTask.getJclass() +
+                        "; status=" + appTask.getStatus() + "] execute finish.");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
+            } catch (TimeoutException e){
+                log.warn("Task execute 10mins timeout!");
             }
             /*finally {
                 //启动一次顺序关闭，执行以前提交的任务，但不接受新任务。如果已经关闭，则调用没有其他作用。
@@ -82,11 +85,17 @@ public class TaskRunner {
     }
 
     public void refreshAppTasks(){
-        //Get pending tasks
+        //Get tasks order by status
         appTasks = appTaskMap.getAppTasksByStatus(AppTaskStatus.PENDING.name());
 
+        //if no pending tasks, resume running tasks
         if(appTasks.size() == 0 && executor.getActiveCount()==0){
-            appTasks = appTaskMap.getAppTasksByStatus(AppTaskStatus.RUNNING.name());
+            List<String> listStatus = new ArrayList(Arrays.asList(AppTaskStatus.PENDING.name(),
+                    AppTaskStatus.RUNNING.name(),
+                    AppTaskStatus.HOLDING.name(),
+                    AppTaskStatus.WAITING.name()));
+
+            appTasks = appTaskMap.getAppTasksInAndOrderByStatus(listStatus);
         }
     }
 

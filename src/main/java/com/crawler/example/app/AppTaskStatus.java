@@ -1,5 +1,5 @@
 package com.crawler.example.app;
 
 public enum AppTaskStatus {
-    PENDING, RUNNING, CLOSED, DONE, UNKNOWN
+    PENDING, RUNNING, HOLDING, WAITING, CLOSED, DONE, UNKNOWN
 }

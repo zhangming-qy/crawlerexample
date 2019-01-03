@@ -5,12 +5,13 @@ import com.crawler.example.app.AppTaskStatus;
 import com.crawler.example.app.ITaskRunner;
 import com.crawler.example.entity.AppTask;
 import com.crawler.example.entity.ComInfo;
+import com.crawler.example.entity.MsgRequested;
 import com.crawler.example.entity.MsgSites;
 import com.crawler.example.map.ComInfoMap;
+import com.crawler.example.map.MsgRequestedMap;
 import com.crawler.example.map.MsgSitesMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,9 @@ public class MsgPageLookup implements ITaskRunner {
     private ComInfoMap comInfoMap;
 
     @Autowired
+    private MsgRequestedMap msgRequestedMap;
+
+    @Autowired
     private AppTaskMan appTaskMan;
 
     public AppTask getAppTask() {
@@ -47,14 +51,17 @@ public class MsgPageLookup implements ITaskRunner {
     }
 
     @Override
-    public String call() throws Exception {
+    public AppTask call() throws Exception {
 
         AppTask appTask = getAppTask();
-        List<ComInfo> comInfoList = comInfoMap.getMsgUnRequestedListInCategory(appTask.getGroup_name());
+        List<ComInfo> comInfoList = comInfoMap.getMsgUnRequestedListByCategory(appTask.getGroup_name());
 
         //Status PENDING to RUNNING
         if(appTask.getStatus().equals(AppTaskStatus.PENDING.name()))
             appTaskMan.updateAppTasksStatus(AppTaskStatus.RUNNING);
+        else if(comInfoList.size() == 0 && appTask.getStatus().equals(AppTaskStatus.RUNNING.name())){
+            appTaskMan.updateAppTasksStatus(AppTaskStatus.WAITING);
+        }
 
         for(ComInfo comInfo : comInfoList){
             MsgSites msgSites = getMsgSites(comInfo.getWeb_url(),true);
@@ -68,9 +75,14 @@ public class MsgPageLookup implements ITaskRunner {
                     log.info("Duplicated website" + msgSites.getSite_name() + " " + msgSites.getReg_url());
                 }
             }
+
+            //save requested url com info if
+            MsgRequested msgRequested = new MsgRequested();
+            msgRequested.setCom_info_id(comInfo.getId());
+            msgRequestedMap.insert(msgRequested);
         }
 
-        return appTaskMan.getAppStatusStr();
+        return appTask;
     }
 
     public MsgSites getMsgSites(String url, boolean isLoop){

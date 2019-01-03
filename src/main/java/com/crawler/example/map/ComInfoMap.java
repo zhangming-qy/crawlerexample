@@ -19,16 +19,16 @@ public interface ComInfoMap {
     ComInfo getByUrl(String web_url);
 
     @Select("select c.id,c.region,c.category,c.name,c.description,c.web_url,c.visit_cnt,c.from_url,c.created_time,c.modified_time from com_info c left join msg_requested m on c.id = m.com_info_id where c.category=#{category} and m.id is null limit 0,500")
-    List<ComInfo> getMsgUnRequestedListInCategory(@Param("category") String category);
+    List<ComInfo> getMsgUnRequestedListByCategory(@Param("category") String category);
 
     @Update("update com_info set region=#{region},category=#{category},name=#{name},description=#{description},web_url=#{web_url},visit_cnt=#{visit_cnt},modified_time=now() where id=#{id}")
     void updaet(ComInfo comInfo);
 
 
     @Update("update com_info set visit_cnt=visit_cnt+1,modified_time=now() where id=#{id}")
-    void updaetVisitCount(@Param("id") int id);
+    void updaetVisitCountById(@Param("id") int id);
 
     @Update("update com_info set visit_cnt=visit_cnt+1,modified_time=now() where web_url=#{web_url}")
-    void updaetVisitCount(@Param("web_url") String web_url);
+    void updaetVisitCountByUrl(@Param("web_url") String web_url);
 
 }

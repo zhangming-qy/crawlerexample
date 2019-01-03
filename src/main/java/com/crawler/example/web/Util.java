@@ -3,6 +3,7 @@ package com.crawler.example.web;
 import io.webfolder.cdp.Launcher;
 import io.webfolder.cdp.session.Session;
 import io.webfolder.cdp.session.SessionFactory;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -26,13 +27,18 @@ public class Util {
     private String chrome; // "C:\\Users\\Mark_Zhang\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe";
 
     public Document getContent(String url){
+        Document doc = null;
         try{
             //invalid url
             if(!checkUrl(url))
                 return null;
 
-            Document doc = Jsoup.connect(url).get();
+            doc = Jsoup.connect(url).get();
 
+            return doc;
+        }
+        catch (HttpStatusException ex){
+            doc = Jsoup.parse(ex.toString(),url);
             return doc;
         }
         catch (IOException ex){

@@ -59,7 +59,7 @@ public class Lvse {
         for(Element elem : elems){
             String link = elem.absUrl("href");
 
-            List<AppTask> appTasks = appTaskMap.getAppTasksByRootUrl(link);
+            List<AppTask> appTasks = appTaskMap.getAppTasksByRootUrlAndJClass(link, LvseSites.class.getName());
 
             stringBuilder.append(link);
             stringBuilder.append("<br>");
@@ -93,10 +93,13 @@ public class Lvse {
             stringBuilder.append(root_url);
             stringBuilder.append("</td><td>");
 
-            if(appTask.getLast_url() == null || appTask.getLast_url().isEmpty()) {
-                Document docLink = util.getContent(root_url);
-                Element elemLast = docLink.selectFirst(web_last);
-                appTask.setLast_url(elemLast.absUrl("href"));
+            Document docLink = util.getContent(root_url);
+            Element elemLast = docLink.selectFirst(web_last);
+            String lastPage = elemLast.absUrl("href");
+
+            if(appTask.getLast_url() == null || !appTask.getLast_url().equals(lastPage)) {
+                appTask.setStatus(AppTaskStatus.PENDING.name());
+                appTask.setLast_url(lastPage);
                 appTaskMap.update(appTask);
             }
 
@@ -105,5 +108,10 @@ public class Lvse {
         }
         stringBuilder.append("</table>");
         return stringBuilder.toString();
+    }
+
+    @RequestMapping("/init/lvse/msg")
+    public String createMsgTask(){
+        return null;
     }
 }

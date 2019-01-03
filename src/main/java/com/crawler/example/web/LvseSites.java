@@ -15,11 +15,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import static java.lang.Thread.sleep;
+
 @Component
 @Scope("prototype")
 public class LvseSites implements ITaskRunner {
 
     private final Logger log = LoggerFactory.getLogger(LvseSites.class);
+
+    private static volatile int requestCount = 0;
 
     @Autowired
     private Util util;
@@ -49,9 +53,22 @@ public class LvseSites implements ITaskRunner {
         this.appTaskMan = appTaskMan;
     }
 
+    public static synchronized void increaseRequestCount(){
+        requestCount++;
+
+        //request 50/times and then sleep 1 minute to avoid block access
+        try{
+            if(requestCount>0 && (requestCount%30)==0)
+                sleep(60000);
+        }
+        catch (InterruptedException ex){
+            ex.printStackTrace();
+        }
+    }
+
     @Override
     //@Scheduled(fixedDelay=86400000)
-    public String call() {
+    public AppTask call() {
         AppTask appTask = getAppTask();
         String url = appTask.getCurr_url() == null ? appTask.getRoot_url() : appTask.getCurr_url();
         appTaskMan.updateAppTasksStatus(AppTaskStatus.RUNNING);
@@ -61,7 +78,7 @@ public class LvseSites implements ITaskRunner {
             appTaskMan.updateAppTasksStatus(AppTaskStatus.DONE);
         }
 
-        return appTaskMan.getAppStatusStr();
+        return appTask;
     }
 
     @Override
@@ -73,8 +90,17 @@ public class LvseSites implements ITaskRunner {
         log.info("Requesting URL: " + url);
         Document document = util.getContent(url);
 
+       increaseRequestCount();
+
         if(document == null){
             log.warn("Can't get content from " + url);
+            return;
+        }
+        else if(document.text().contains("Status=403")){  //Access deny, hold request, and decrease priority.
+            AppTask appTask = appTaskMan.getAppTask();
+            appTask.setOrder_num(appTask.getOrder_num()+1);
+            appTask.setStatus(AppTaskStatus.HOLDING.name());
+            appTaskMan.updateAppTasks();
             return;
         }
 
