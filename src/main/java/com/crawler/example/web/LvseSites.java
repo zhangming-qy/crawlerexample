@@ -67,7 +67,6 @@ public class LvseSites implements ITaskRunner {
     }
 
     @Override
-    //@Scheduled(fixedDelay=86400000)
     public AppTask call() {
         AppTask appTask = getAppTask();
         String url = appTask.getCurr_url() == null ? appTask.getRoot_url() : appTask.getCurr_url();
@@ -84,6 +83,11 @@ public class LvseSites implements ITaskRunner {
     @Override
     public void setTask(AppTask appTask) {
         this.appTaskMan.setTask(appTask);
+    }
+
+    @Override
+    public boolean isSupportConcurrent() {
+        return false;
     }
 
     public void crawlLvseSites(String url){
@@ -137,6 +141,8 @@ public class LvseSites implements ITaskRunner {
             ComInfo comInfoCheck = comInfoMap.getByUrl(aHref);
             if(comInfoCheck == null)
                 comInfoMap.insert(comInfo);
+            else
+                log.info("Duplicated: {}-{}",brand.text(),aHref);
 
         }
 

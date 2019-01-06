@@ -5,5 +5,6 @@ import com.crawler.example.entity.AppTask;
 import java.util.concurrent.Callable;
 
 public interface ITaskRunner extends Callable<AppTask> {
-    public void setTask(AppTask appTask);
+    void setTask(AppTask appTask);
+    boolean isSupportConcurrent();
 }

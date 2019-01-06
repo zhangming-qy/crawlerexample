@@ -3,6 +3,7 @@ package com.crawler.example.web;
 import com.crawler.example.app.AppTaskMan;
 import com.crawler.example.app.AppTaskStatus;
 import com.crawler.example.app.ITaskRunner;
+import com.crawler.example.app.TaskRunner;
 import com.crawler.example.entity.AppTask;
 import com.crawler.example.entity.ComInfo;
 import com.crawler.example.entity.MsgRequested;
@@ -19,12 +20,19 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Scope("prototype")
 public class MsgPageLookup implements ITaskRunner {
 
     private final Logger log = LoggerFactory.getLogger(MsgPageLookup.class);
+
+    private static ThreadPoolExecutor executor  = new ThreadPoolExecutor(TaskRunner.CORE_POOL_SIZE,
+            TaskRunner.CORE_POOL_SIZE*2, 10L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<Runnable>(500));
 
     @Autowired
     private Util util;
@@ -51,7 +59,12 @@ public class MsgPageLookup implements ITaskRunner {
     }
 
     @Override
-    public AppTask call() throws Exception {
+    public boolean isSupportConcurrent() {
+        return true;
+    }
+
+    @Override
+    public AppTask call(){
 
         AppTask appTask = getAppTask();
         List<ComInfo> comInfoList = comInfoMap.getMsgUnRequestedListByCategory(appTask.getGroup_name());

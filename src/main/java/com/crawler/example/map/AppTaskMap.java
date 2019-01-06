@@ -20,17 +20,17 @@ public interface AppTaskMap {
             "#{item}" +
             "</foreach>" +
             "), order_num</script>")
-    public List<AppTask> getAppTasksInAndOrderByStatus(@Param("statusList") List<String> statusList);
+    List<AppTask> getAppTasksInAndOrderByStatus(@Param("statusList") List<String> statusList);
 
     @Select("select id, root_url, group_name, order_num, jclass, status, curr_url, last_url,created_time, modified_time from app_tasks where root_url = #{root_url} and jclass=#{jclass}")
-    public List<AppTask> getAppTasksByRootUrlAndJClass(String root_url, String jclass);
+    List<AppTask> getAppTasksByRootUrlAndJClass(@Param("root_url") String root_url, @Param("jclass") String jclass);
 
     @Select("select id, root_url, group_name, order_num, jclass, status, curr_url, last_url, created_time, modified_time from app_tasks")
-    public List<AppTask> getAll();
+    List<AppTask> getAll();
 
     @Insert("insert into app_tasks(root_url,group_name,order_num,jclass,status,last_url,created_time, modified_time) values (#{root_url},#{group_name},#{order_num},#{jclass},#{status},#{last_url},now(),now())")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    void insert(AppTask appTask);
+    Integer insert(AppTask appTask);
 
     @Update("update app_tasks set status=#{status}, curr_url=#{curr_url}, last_url=#{last_url}, modified_time=now() where id=#{id}")
     void update(AppTask appTask);

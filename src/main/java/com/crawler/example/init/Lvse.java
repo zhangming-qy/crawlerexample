@@ -112,6 +112,6 @@ public class Lvse {
 
     @RequestMapping("/init/lvse/msg")
     public String createMsgTask(){
-        return null;
+        return "TODO";
     }
 }

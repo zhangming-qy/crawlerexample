@@ -57,8 +57,8 @@ public class AppTaskMan implements ITaskRunner {
     }
 
     @Override
-    public String call() {
+    public AppTask call() {
         //TODO
-        return "";
+        return appTask;
     }
 }
