@@ -1,14 +1,8 @@
 package com.crawler.example.web;
 
-import com.crawler.example.app.AppTaskMan;
-import com.crawler.example.app.AppTaskStatus;
-import com.crawler.example.app.ITaskRunner;
-import com.crawler.example.app.TaskRunner;
-import com.crawler.example.entity.AppTask;
 import com.crawler.example.entity.ComInfo;
 import com.crawler.example.entity.MsgRequested;
 import com.crawler.example.entity.MsgSites;
-import com.crawler.example.map.ComInfoMap;
 import com.crawler.example.map.MsgRequestedMap;
 import com.crawler.example.map.MsgSitesMap;
 import org.jsoup.nodes.Document;
@@ -18,21 +12,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 @Component
 @Scope("prototype")
-public class MsgPageLookup implements ITaskRunner {
+public class MsgPageLookup implements Runnable {
 
     private final Logger log = LoggerFactory.getLogger(MsgPageLookup.class);
 
-    private static ThreadPoolExecutor executor  = new ThreadPoolExecutor(TaskRunner.CORE_POOL_SIZE,
-            TaskRunner.CORE_POOL_SIZE*2, 10L, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>(500));
+    private final static ConcurrentLinkedDeque<ComInfo> comInfoDeque = new ConcurrentLinkedDeque<>();
 
     @Autowired
     private Util util;
@@ -41,50 +31,25 @@ public class MsgPageLookup implements ITaskRunner {
     private MsgSitesMap msgSitesMap;
 
     @Autowired
-    private ComInfoMap comInfoMap;
-
-    @Autowired
     private MsgRequestedMap msgRequestedMap;
 
-    @Autowired
-    private AppTaskMan appTaskMan;
-
-    public AppTask getAppTask() {
-        return appTaskMan.getAppTask();
+    public static void setComInfoDeque(Collection<? extends ComInfo> c){
+        comInfoDeque.addAll(c);
     }
 
     @Override
-    public void setTask(AppTask appTask) {
-        this.appTaskMan.setTask(appTask);
-    }
-
-    @Override
-    public boolean isSupportConcurrent() {
-        return true;
-    }
-
-    @Override
-    public AppTask call(){
-
-        AppTask appTask = getAppTask();
-        List<ComInfo> comInfoList = comInfoMap.getMsgUnRequestedListByCategory(appTask.getGroup_name());
-
-        //Status PENDING to RUNNING
-        if(appTask.getStatus().equals(AppTaskStatus.PENDING.name()))
-            appTaskMan.updateAppTasksStatus(AppTaskStatus.RUNNING);
-        else if(comInfoList.size() == 0 && appTask.getStatus().equals(AppTaskStatus.RUNNING.name())){
-            appTaskMan.updateAppTasksStatus(AppTaskStatus.WAITING);
-        }
-
-        for(ComInfo comInfo : comInfoList){
-            MsgSites msgSites = getMsgSites(comInfo.getWeb_url(),true);
-            if(msgSites != null){
+    public void run() {
+        try {
+            ComInfo comInfo = comInfoDeque.poll();
+            log.info("Proceeding {}", comInfo.getWeb_url());
+            MsgSites msgSites = getMsgSites(comInfo.getWeb_url(), true);
+            if (msgSites != null) {
                 msgSites.setSite_name(comInfo.getName());
                 MsgSites msgSitesCheck = msgSitesMap.selectByDomain(msgSites.getDomain_name());
-                if(msgSitesCheck == null){
+                if (msgSitesCheck == null) {
                     msgSitesMap.insert(msgSites);
-                }
-                else {
+                    log.info("Inserted message sites {} - {}", msgSites.getSite_name(), msgSites.getReg_url());
+                } else {
                     log.info("Duplicated website" + msgSites.getSite_name() + " " + msgSites.getReg_url());
                 }
             }
@@ -93,9 +58,11 @@ public class MsgPageLookup implements ITaskRunner {
             MsgRequested msgRequested = new MsgRequested();
             msgRequested.setCom_info_id(comInfo.getId());
             msgRequestedMap.insert(msgRequested);
+            log.info("Audit requested page {}", comInfo.getWeb_url());
         }
-
-        return appTask;
+        catch (Exception e){
+            log.error(e.getMessage());
+        }
     }
 
     public MsgSites getMsgSites(String url, boolean isLoop){
@@ -143,4 +110,5 @@ public class MsgPageLookup implements ITaskRunner {
 
         return null;
     }
+
 }

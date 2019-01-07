@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import static java.lang.Thread.sleep;
 
 @Component
-@Scope("prototype")
 public class LvseSites implements ITaskRunner {
 
     private final Logger log = LoggerFactory.getLogger(LvseSites.class);
@@ -73,8 +72,21 @@ public class LvseSites implements ITaskRunner {
         appTaskMan.updateAppTasksStatus(AppTaskStatus.RUNNING);
         crawlLvseSites(url);
 
-        if(appTask.getCurr_url().equals(appTask.getLast_url())){
+        if(appTask.getCurr_url()!= null && appTask.getCurr_url().equals(appTask.getLast_url())){
             appTaskMan.updateAppTasksStatus(AppTaskStatus.DONE);
+        }
+        else{
+            try {
+                //if holding, sleep 5mins and then try again until finish.
+                while(appTask.getStatus().equals(AppTaskStatus.HOLDING.name())){
+                    Thread.sleep(300000);
+                    call();
+                }
+            }
+            catch (InterruptedException e){
+                e.printStackTrace();
+                log.error(e.getMessage());
+            }
         }
 
         return appTask;
@@ -154,6 +166,11 @@ public class LvseSites implements ITaskRunner {
             crawlLvseSites(nextPage);
         }
         else{
+            nextLink = document.selectFirst("a[href]:contains(最后一页)");
+            if(getAppTask().getCurr_url() == null && nextLink != null){
+                String lastPage = nextLink.absUrl("href");
+                appTaskMan.updateAppTasksCurrUrl(lastPage);
+            }
             log.info("This is the last page: " + url);
         }
     }

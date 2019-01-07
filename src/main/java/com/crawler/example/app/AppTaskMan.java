@@ -57,6 +57,11 @@ public class AppTaskMan implements ITaskRunner {
     }
 
     @Override
+    public boolean isSupportConcurrent() {
+        return false;
+    }
+
+    @Override
     public AppTask call() {
         //TODO
         return appTask;

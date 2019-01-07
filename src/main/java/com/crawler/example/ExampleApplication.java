@@ -37,7 +37,7 @@ public class ExampleApplication extends SpringBootServletInitializer {
 
 		@GetMapping("/")
 		public String handler(){
-			return "TODO";
+			return "Hello";
 		}
 	}
 }
