@@ -102,15 +102,13 @@ public class TaskScheduler {
                 Future<AppTask> fs = fsEntry.getValue();
                 if(fs.isDone()){
                     AppTask appTask = fs.get();
-                    if(Arrays.stream(new String[]{AppTaskStatus.DONE.name(),AppTaskStatus.CLOSED.name(), AppTaskStatus.WAITING.name()}).anyMatch(appTask.getStatus()::equals)){
-                        futureHashMap.remove(fsEntry.getKey());
-                        log.info("Task [id={}, root_url={}, group_name={}, java_class={}, status={}] execute finish.",
-                                appTask.getId(),
-                                appTask.getRoot_url(),
-                                appTask.getGroup_name(),
-                                appTask.getJclass(),
-                                appTask.getStatus());
-                    }
+                    futureHashMap.remove(fsEntry.getKey());
+                    log.info("Task [id={}, root_url={}, group_name={}, java_class={}, status={}] execute finish.",
+                            appTask.getId(),
+                            appTask.getRoot_url(),
+                            appTask.getGroup_name(),
+                            appTask.getJclass(),
+                            appTask.getStatus());
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();

@@ -79,6 +79,7 @@ public class LvseSites implements ITaskRunner {
             try {
                 //if holding, sleep 5mins and then try again until finish.
                 while(appTask.getStatus().equals(AppTaskStatus.HOLDING.name())){
+                    log.warn("Task [{}-{}] is holding, and wait 5mins then restart again.",appTask.getId(), appTask.getRoot_url());
                     Thread.sleep(300000);
                     call();
                 }
