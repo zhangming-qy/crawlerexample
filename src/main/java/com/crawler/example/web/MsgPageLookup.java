@@ -41,6 +41,8 @@ public class MsgPageLookup implements Runnable {
     public void run() {
         try {
             ComInfo comInfo = comInfoDeque.poll();
+            if(comInfo ==null) return;
+
             log.info("Proceeding {}", comInfo.getWeb_url());
             MsgSites msgSites = getMsgSites(comInfo.getWeb_url(), true);
             if (msgSites != null) {

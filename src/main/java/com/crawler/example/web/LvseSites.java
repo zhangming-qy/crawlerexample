@@ -79,8 +79,8 @@ public class LvseSites implements ITaskRunner {
             try {
                 //if holding, sleep 5mins and then try again until finish.
                 while(appTask.getStatus().equals(AppTaskStatus.HOLDING.name())){
-                    log.warn("Task [{}-{}] is holding, and wait 5mins then restart again.",appTask.getId(), appTask.getRoot_url());
-                    Thread.sleep(300000);
+                    log.warn("Task [{}-{}] is holding, and wait 5*3mins then restart again.",appTask.getId(), appTask.getRoot_url());
+                    Thread.sleep(300000*3);
                     call();
                 }
             }
@@ -151,7 +151,7 @@ public class LvseSites implements ITaskRunner {
             log.info("Brand: " + brand.text());
             log.info("Brand Link: " + aHref);
 
-            ComInfo comInfoCheck = comInfoMap.getByUrl(aHref);
+            ComInfo comInfoCheck = comInfoMap.getByCategoryAndUrl(comInfo.getCategory(), aHref);
             if(comInfoCheck == null)
                 comInfoMap.insert(comInfo);
             else

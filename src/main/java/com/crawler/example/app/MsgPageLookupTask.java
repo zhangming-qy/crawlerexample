@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -54,7 +56,7 @@ public class MsgPageLookupTask implements ITaskRunner {
         MsgPageLookup.setComInfoDeque(comInfoList);
 
         TaskScheduler taskScheduler = new TaskScheduler();
-        List<Future<?>> futureList = new ArrayList<>(comInfoList.size());
+        Queue<Future<?>> futureList = new LinkedList<>();
         for(int i=0;i<comInfoList.size();i++){
             futureList.add(taskScheduler.submit(ApplicationContextProvider.getBean(MsgPageLookup.class)));
         }
@@ -62,8 +64,9 @@ public class MsgPageLookupTask implements ITaskRunner {
         log.info("Added message page lookup schedule tasks {}.", comInfoList.size());
 
         //waiting all tasks finish
-        for(Future<?> fs: futureList){
+        while(futureList.peek()!=null){
             try{
+                Future<?> fs = futureList.poll();
                 fs.get();
             }
             catch (InterruptedException e){

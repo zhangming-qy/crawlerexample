@@ -45,5 +45,5 @@ from_url     varchar(255),
 created_time DATETIME NOT NULL,
 modified_time DATETIME NOT NULL,
 primary key (id),
-unique key (web_url)
+unique key (category,web_url)
 );

@@ -35,8 +35,9 @@ public class TaskRunner implements CommandLineRunner,Runnable {
 
         //add refresh and monitor running status task
         //TaskScheduler.setMaximumPoolSize(TaskScheduler.CORE_POOL_SIZE*2);
+        //avoid submit and remove scheduled task conflict, set the delay time almost different
         TaskScheduler.scheduleWithFixedDelay(this, 0,30, TimeUnit.SECONDS);
-        TaskScheduler.scheduleWithFixedDelay(new Thread( () -> TaskScheduler.removeFinishedAppTasks()), 30, 30, TimeUnit.SECONDS);
+        TaskScheduler.scheduleWithFixedDelay(new Thread( () -> TaskScheduler.removeFinishedAppTasks()), 41, 41, TimeUnit.SECONDS);
 
         log.info("Application is scheduled done, tasks are running.");
     }

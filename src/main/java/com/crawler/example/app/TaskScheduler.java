@@ -4,10 +4,7 @@ import com.crawler.example.entity.AppTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class TaskScheduler {
@@ -79,14 +76,15 @@ public class TaskScheduler {
                 if(task.isSupportConcurrent())
                     log.info("Exist concurrent task {}-{}-{}.", appTask.getId(), appTask.getGroup_name(), appTask.getRoot_url());
                 else
-                    log.info("Exist non-concurrent task {}-{}-{}.", appTask.getId(), appTask.getGroup_name(), appTask.getRoot_url());
+                    log.info("Can't submit non-concurrent task {}-{}-{}.", appTask.getId(), appTask.getGroup_name(), appTask.getRoot_url());
                 return futureHashMap.get(futureKey);
             }
 
             task.setTask(appTask);
             Future<AppTask> appTaskFuture = scheduledExecutor.submit(task);
+            futureHashMap.putIfAbsent(futureKey,appTaskFuture);
             log.info("Submit AppTask {}-{}-{}.", appTask.getId(), appTask.getGroup_name(), appTask.getRoot_url());
-            return futureHashMap.put(futureKey,appTaskFuture);
+            return appTaskFuture;
         }
         catch (ClassNotFoundException ex){
             log.error("Can't found class {}.", appTask.getJclass());
@@ -97,12 +95,15 @@ public class TaskScheduler {
 
     public static void removeFinishedAppTasks(){
         //遍历任务的结果
-        for (Map.Entry<String,Future<AppTask>> fsEntry : futureHashMap.entrySet()) {
+        Iterator<Map.Entry<String, Future<AppTask>>> entries = futureHashMap.entrySet().iterator();
+
+        while (entries.hasNext()) {
             try {
-                Future<AppTask> fs = fsEntry.getValue();
+                Map.Entry<String, Future<AppTask>> entry = entries.next();
+                Future<AppTask> fs = entry.getValue();
                 if(fs.isDone()){
                     AppTask appTask = fs.get();
-                    futureHashMap.remove(fsEntry.getKey());
+                    futureHashMap.remove(entry.getKey());
                     log.info("Task [id={}, root_url={}, group_name={}, java_class={}, status={}] execute finish.",
                             appTask.getId(),
                             appTask.getRoot_url(),
